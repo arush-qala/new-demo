@@ -1,7 +1,7 @@
 import React, { Suspense, useRef, useState, Component, ReactNode } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, OrbitControls, Stage, Box, useTexture } from '@react-three/drei'
-import { RealisticAvatar } from './RealisticAvatar'
+import { ModelAvatar } from './ModelAvatar'
 import * as THREE from 'three'
 
 class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
@@ -114,7 +114,7 @@ function AnimatedRunwayAvatar({
   
   return (
     <group ref={groupRef}>
-      <RealisticAvatar
+      <ModelAvatar
         bodyType="standard"
         measurements={measurements}
         productImage={productImage}

@@ -1,0 +1,169 @@
+import React, { Suspense, useRef, useMemo } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { useGLTF, useTexture } from '@react-three/drei'
+import * as THREE from 'three'
+
+type BodyType = 'petite' | 'standard' | 'curvy' | 'athletic' | 'tall'
+
+type ModelAvatarProps = {
+  bodyType: BodyType
+  measurements: { bust: number; waist: number; hips: number; height: number }
+  productImage?: string
+  pose?: number
+}
+
+// Using reliable 3D female body model from @pmndrs/assets
+// This package provides curated, reliable 3D models for React Three Fiber
+// Xbot is a humanoid model - for production, download and host an actual female body model
+// Options: Mixamo female models, Sketchfab CC0 models, or custom rigged models
+const FEMALE_MODEL_URL = 'https://assets.pmnd.rs/models/xbot.glb'
+
+// Fallback model
+const FALLBACK_MODEL = 'https://assets.pmnd.rs/models/Flamingo.glb'
+
+// Body type scaling
+const bodyTypeScales: Record<BodyType, { x: number; y: number; z: number }> = {
+  petite: { x: 0.85, y: 0.90, z: 0.85 },
+  standard: { x: 1.0, y: 1.0, z: 1.0 },
+  curvy: { x: 1.15, y: 1.0, z: 1.20 },
+  athletic: { x: 1.05, y: 1.15, z: 1.05 },
+  tall: { x: 1.0, y: 1.20, z: 1.0 },
+}
+
+function AvatarFallback() {
+  return (
+    <group position={[0, -1.2, 0]}>
+      <mesh position={[0, 1.5, 0]} castShadow>
+        <sphereGeometry args={[0.11, 32, 32]} />
+        <meshStandardMaterial color="#F5D5C0" />
+      </mesh>
+      <mesh position={[0, 0.8, 0]} castShadow>
+        <cylinderGeometry args={[0.35, 0.28, 0.5, 32]} />
+        <meshStandardMaterial color="#C9A35B" />
+      </mesh>
+      <mesh position={[0, 0.5, 0]} castShadow>
+        <cylinderGeometry args={[0.32, 0.38, 0.3, 32]} />
+        <meshStandardMaterial color="#C9A35B" />
+      </mesh>
+      <mesh position={[0, -0.5, 0]} castShadow>
+        <cylinderGeometry args={[0.3, 0.45, 0.6, 32]} />
+        <meshStandardMaterial color="#C9A35B" />
+      </mesh>
+    </group>
+  )
+}
+
+// Internal component that loads the model - must use hooks unconditionally
+function ModelLoader({ 
+  bodyType, 
+  measurements, 
+  productImage, 
+  pose, 
+  bodyScale, 
+  heightScale 
+}: ModelAvatarProps & { bodyScale: { x: number; y: number; z: number }, heightScale: number }) {
+  const groupRef = useRef<THREE.Group>(null)
+  
+  // Load model - hooks must be called unconditionally
+  // ErrorBoundary will catch loading failures
+  const gltf = useGLTF(FEMALE_MODEL_URL, true)
+  const model = gltf.scene
+  
+  // Load product texture if available
+  // Note: useTexture throws if image fails, ErrorBoundary will catch it
+  const texture = productImage ? useTexture(productImage) : null
+  
+  // Create dress material
+  const dressMaterial = useMemo(() => {
+    if (texture) {
+      texture.wrapS = THREE.RepeatWrapping
+      texture.wrapT = THREE.RepeatWrapping
+      texture.repeat.set(1, 1)
+      return new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: 0.7,
+        metalness: 0.1,
+      })
+    }
+    return new THREE.MeshStandardMaterial({
+      color: '#C9A35B',
+      roughness: 0.8,
+      metalness: 0.1,
+    })
+  }, [texture])
+  
+  // Apply pose animation
+  useFrame(() => {
+    if (!groupRef.current) return
+    
+    // Subtle body rotation and movement for pose
+    groupRef.current.rotation.y = Math.sin(pose) * 0.12
+    groupRef.current.position.z = Math.sin(pose * 0.5) * 0.12
+  })
+  
+  // Clone and scale the model
+  const scaledModel = useMemo(() => {
+    if (!model) return null
+    
+    const clone = model.clone()
+    clone.scale.set(
+      bodyScale.x * heightScale,
+      bodyScale.y * heightScale,
+      bodyScale.z * heightScale
+    )
+    
+    // Apply dress texture to body mesh if available
+    if (texture && clone.children) {
+      clone.traverse((child: any) => {
+        if (child.isMesh && child.material) {
+          // Apply dress material to body parts
+          const name = child.name?.toLowerCase() || ''
+          if (name.includes('body') || name.includes('torso') || 
+              name.includes('dress') || name.includes('shirt') ||
+              name.includes('top') || name.includes('chest')) {
+            child.material = dressMaterial
+          }
+        }
+      })
+    }
+    
+    return clone
+  }, [model, bodyScale, heightScale, texture, dressMaterial])
+  
+  if (!scaledModel) {
+    return <AvatarFallback />
+  }
+  
+  return (
+    <group ref={groupRef} position={[0, -1.2, 0]}>
+      <primitive object={scaledModel} />
+    </group>
+  )
+}
+
+// Main component with proper hook usage
+export const ModelAvatar: React.FC<ModelAvatarProps> = ({
+  bodyType,
+  measurements,
+  productImage,
+  pose = 0
+}) => {
+  const bodyScale = bodyTypeScales[bodyType]
+  const heightScale = useMemo(() => Math.max(0.9, Math.min(1.1, measurements.height / 168)), [measurements.height])
+  
+  return (
+    <ModelLoader
+      bodyType={bodyType}
+      measurements={measurements}
+      productImage={productImage}
+      pose={pose}
+      bodyScale={bodyScale}
+      heightScale={heightScale}
+    />
+  )
+}
+
+// Preload models for better performance
+useGLTF.preload(FEMALE_MODEL_URL)
+
+

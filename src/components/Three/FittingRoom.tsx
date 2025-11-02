@@ -1,7 +1,7 @@
 import React, { Suspense, useMemo, useState, Component, ReactNode, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, OrbitControls, Stage, Box } from '@react-three/drei'
-import { RealisticAvatar } from './RealisticAvatar'
+import { ModelAvatar } from './ModelAvatar'
 
 class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode; fallback: ReactNode }) {
@@ -70,7 +70,7 @@ export const FittingRoom: React.FC<FittingRoomProps> = ({ productImage }) => {
           <Suspense fallback={<AvatarFallback />}>
             <ErrorBoundary fallback={<AvatarFallback />}>
               <Stage intensity={1.1} environment="city" shadows="contact">
-                <RealisticAvatar
+                <ModelAvatar
                   bodyType={bodyType}
                   measurements={measurements}
                   productImage={productImage}
