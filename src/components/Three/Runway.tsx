@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo, useRef, useState } from 'react'
+import React, { Suspense, useMemo, useRef, useState, useEffect } from 'react'
 import { Canvas, useFrame, ErrorBoundary } from '@react-three/fiber'
 import { Environment, OrbitControls, Stage, useGLTF, Box } from '@react-three/drei'
 
@@ -23,11 +23,16 @@ function AvatarFallback() {
   )
 }
 
-function Avatar({ url, playing }: { url: string; playing: boolean }) {
+function SafeAvatar({ url, playing }: { url: string; playing: boolean }) {
   const group = useRef<any>()
   
+  // Only use safe URLs - block readyplayer.me URLs
+  const safeUrl = url && !url.includes('readyplayer.me') 
+    ? url 
+    : 'https://assets.pmnd.rs/models/Flamingo.glb'
+  
   try {
-    const { scene } = useGLTF(url)
+    const { scene } = useGLTF(safeUrl)
     
     useFrame((state) => {
       if (!group.current) return
@@ -39,14 +44,14 @@ function Avatar({ url, playing }: { url: string; playing: boolean }) {
       }
     })
     
-    return <group ref={group} position={[0, -1.2, 0]}>
-      <primitive object={scene} />
-    </group>
+    return <Stage intensity={0.9} environment={null} shadows="contact">
+      <group ref={group} position={[0, -1.2, 0]}>
+        <primitive object={scene} />
+      </group>
+    </Stage>
   } catch (err) {
     console.error('Avatar error:', err)
-    return <group ref={group} position={[0, -1.2, 0]}>
-      <AvatarFallback />
-    </group>
+    return <AvatarFallback />
   }
 }
 
@@ -61,9 +66,7 @@ export const Runway: React.FC<RunwayProps> = ({ modelUrl, background }) => {
         <color attach="background" args={[bg]} />
         <Suspense fallback={<AvatarFallback />}>
           <ErrorBoundary fallback={<AvatarFallback />}>
-            <Stage intensity={0.9} environment={null} shadows="contact">
-              <Avatar url={safeUrl} playing={playing} />
-            </Stage>
+            <SafeAvatar url={safeUrl} playing={playing} />
           </ErrorBoundary>
           <Environment preset="studio" />
         </Suspense>

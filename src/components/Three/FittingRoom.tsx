@@ -31,9 +31,14 @@ function AvatarFallback() {
   )
 }
 
-function Avatar({ url, heightScale = 1, pose = 0 }: { url: string; heightScale?: number; pose?: number }) {
+function SafeAvatar({ url, heightScale = 1, pose = 0 }: { url: string; heightScale?: number; pose?: number }) {
+  // Only use safe URLs - block readyplayer.me URLs
+  const safeUrl = url && !url.includes('readyplayer.me') 
+    ? url 
+    : DEFAULT_MODEL
+  
   try {
-    const { scene } = useGLTF(url)
+    const { scene } = useGLTF(safeUrl)
     const scaled = useMemo(() => {
       const clone = scene.clone()
       clone.scale.setScalar(heightScale)
@@ -43,7 +48,9 @@ function Avatar({ url, heightScale = 1, pose = 0 }: { url: string; heightScale?:
     // Apply simple pose offsets
     scaled.rotation.y = Math.sin(pose) * 0.15
     scaled.position.z = Math.sin(pose * 0.5) * 0.1
-    return <primitive object={scaled} position={[0, -1.2, 0]} />
+    return <Stage intensity={0.9} environment={null} shadows="contact">
+      <primitive object={scaled} position={[0, -1.2, 0]} />
+    </Stage>
   } catch (err) {
     console.error('Avatar error:', err)
     return <AvatarFallback />
@@ -64,9 +71,7 @@ export const FittingRoom: React.FC = () => {
           <color attach="background" args={["#0f0f10"]} />
           <Suspense fallback={<AvatarFallback />}>
             <ErrorBoundary fallback={<AvatarFallback />}>
-              <Stage intensity={0.9} environment={null} shadows="contact">
-                <Avatar url={bodyToModel[bodyType]} heightScale={heightScale} pose={playing ? 1 : 0} />
-              </Stage>
+              <SafeAvatar url={bodyToModel[bodyType]} heightScale={heightScale} pose={playing ? 1 : 0} />
             </ErrorBoundary>
             <Environment preset="studio" />
           </Suspense>
