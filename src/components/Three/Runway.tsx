@@ -1,8 +1,8 @@
-import React, { Suspense, useRef, useState, Component, ReactNode, useEffect } from 'react'
+import React, { Suspense, useRef, useState, Component, ReactNode } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, OrbitControls, Stage, Box } from '@react-three/drei'
+import { Environment, OrbitControls, Stage, Box, useTexture } from '@react-three/drei'
 import { RealisticAvatar } from './RealisticAvatar'
-import { VideoRecorder } from './VideoRecorder'
+import * as THREE from 'three'
 
 class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode; fallback: ReactNode }) {
@@ -45,7 +45,7 @@ function AvatarFallback() {
   )
 }
 
-// Runway animated avatar wrapper
+// Runway animated avatar wrapper with natural walk animation
 function AnimatedRunwayAvatar({ 
   playing, 
   productImage,
@@ -55,67 +55,121 @@ function AnimatedRunwayAvatar({
   productImage?: string
   measurements: { bust: number; waist: number; hips: number; height: number }
 }) {
+  const groupRef = useRef<THREE.Group>(null)
   const poseRef = useRef(0)
   
   useFrame((state) => {
+    if (!groupRef.current) return
+    
     if (playing) {
       const t = state.clock.getElapsedTime()
-      // Create realistic runway walk pose
-      poseRef.current = t
+      const walkSpeed = 1.2
+      
+      // Forward/back movement along runway
+      const forward = Math.sin(t * walkSpeed) * 1.5
+      groupRef.current.position.z = forward
+      
+      // Vertical bounce in walk
+      const bounce = Math.abs(Math.sin(t * walkSpeed * 2)) * 0.04
+      groupRef.current.position.y = bounce
+      
+      // Hip sway for natural walk
+      groupRef.current.rotation.y = Math.sin(t * walkSpeed) * 0.08
+      
+      // Slight shoulder tilt
+      groupRef.current.rotation.x = Math.sin(t * walkSpeed * 2) * 0.015
+      
+      // Pose value for avatar animation
+      poseRef.current = t * walkSpeed
     } else {
+      groupRef.current.position.set(0, 0, 0)
+      groupRef.current.rotation.set(0, 0, 0)
       poseRef.current = 0
     }
   })
   
   return (
-    <RealisticAvatar
-      bodyType="standard"
-      measurements={measurements}
-      productImage={productImage}
-      pose={poseRef.current}
-    />
+    <group ref={groupRef}>
+      <RealisticAvatar
+        bodyType="standard"
+        measurements={measurements}
+        productImage={productImage}
+        pose={poseRef.current}
+      />
+    </group>
+  )
+}
+
+// Runway background component
+function RunwayBackground() {
+  // Use a professional runway image or create a realistic runway scene
+  // For now, create a realistic runway environment
+  return (
+    <>
+      {/* Runway floor - polished wood look */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6, 0]} receiveShadow>
+        <planeGeometry args={[25, 40]} />
+        <meshStandardMaterial 
+          color="#1a1714" 
+          roughness={0.3}
+          metalness={0.1}
+        />
+      </mesh>
+      
+      {/* Runway edges/stripes */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.59, 0]} receiveShadow>
+        <planeGeometry args={[2, 40]} />
+        <meshStandardMaterial color="#0a0806" roughness={0.2} />
+      </mesh>
+      
+      {/* Background wall - dark neutral */}
+      <mesh position={[0, 2, -10]} receiveShadow>
+        <planeGeometry args={[30, 15]} />
+        <meshStandardMaterial color="#0f0e0d" />
+      </mesh>
+      
+      {/* Ambient runway lighting */}
+      <ambientLight intensity={0.4} color="#fff8f0" />
+      
+      {/* Main spotlight - like fashion show lighting */}
+      <spotLight
+        position={[0, 8, 5]}
+        angle={0.5}
+        penumbra={0.3}
+        intensity={2}
+        castShadow
+        color="#fffef8"
+      />
+      
+      {/* Side lights */}
+      <spotLight position={[-8, 6, 2]} angle={0.4} penumbra={0.5} intensity={0.8} color="#fff8f0" />
+      <spotLight position={[8, 6, 2]} angle={0.4} penumbra={0.5} intensity={0.8} color="#fff8f0" />
+      
+      {/* Back lighting for silhouette */}
+      <directionalLight position={[0, 4, -8]} intensity={0.6} color="#fff8f0" />
+    </>
   )
 }
 
 export const Runway: React.FC<RunwayProps> = ({ modelUrl, background, productImage }) => {
-  // Dynamic background based on product colors
-  const bg = background ?? '#1a1a1a'
+  // Professional runway background - dark neutral
+  const bg = background ?? '#0a0806'
   const [playing, setPlaying] = useState(false)
-  const [recording, setRecording] = useState(false)
-  const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
   
   // Standard measurements for runway model
   const measurements = { bust: 90, waist: 72, hips: 96, height: 168 }
   
-  const handleVideoStop = (blob: Blob) => {
-    setVideoBlob(blob)
-    setRecording(false)
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'runway-walk.webm'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-  
   return (
-    <div className="relative rounded-xl overflow-hidden" style={{ height: 480 }}>
-      <Canvas camera={{ position: [2.5, 1.6, 3.2], fov: 45 }}>
+    <div className="relative rounded-xl overflow-hidden" style={{ height: 500 }}>
+      <Canvas camera={{ position: [2.5, 1.8, 4], fov: 50 }} shadows>
         <color attach="background" args={[bg]} />
-        {/* Runway floor */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]} receiveShadow>
-          <planeGeometry args={[20, 30]} />
-          <meshStandardMaterial color="#2a2a2a" roughness={0.8} />
-        </mesh>
         
-        {/* Runway lights */}
-        <ambientLight intensity={0.3} />
-        <directionalLight position={[5, 8, 5]} intensity={1.2} castShadow />
-        <spotLight position={[0, 6, 8]} angle={0.4} penumbra={0.5} intensity={1} castShadow />
+        {/* Realistic runway environment */}
+        <RunwayBackground />
         
         <Suspense fallback={<AvatarFallback />}>
           <ErrorBoundary fallback={<AvatarFallback />}>
-            <Stage intensity={1.2} environment="sunset" shadows="contact">
+            <Stage intensity={1.4} environment="city" shadows="contact">
               <AnimatedRunwayAvatar 
                 playing={playing} 
                 productImage={productImage}
@@ -123,25 +177,18 @@ export const Runway: React.FC<RunwayProps> = ({ modelUrl, background, productIma
               />
             </Stage>
           </ErrorBoundary>
-          <Environment preset="sunset" />
+          <Environment preset="city" />
         </Suspense>
-        <VideoRecorder isRecording={recording} onStop={handleVideoStop} />
+        
         <CameraPath playing={playing} />
-        <OrbitControls enablePan={false} minDistance={2} maxDistance={6} enabled={!playing} />
+        <OrbitControls enablePan={false} minDistance={2.5} maxDistance={7} enabled={!playing} />
       </Canvas>
-      <div className="absolute bottom-4 right-4 flex gap-2 flex-col">
+      <div className="absolute bottom-4 right-4">
         <button 
           onClick={()=>setPlaying(p=>!p)} 
-          className="glass rounded-full px-5 py-2.5 text-sm font-medium hover:bg-white/10 transition"
+          className="glass rounded-full px-5 py-2.5 text-sm font-medium hover:bg-white/10 transition backdrop-blur-sm"
         >
           {playing? '⏸ Pause' : '▶ Play Runway Walk'}
-        </button>
-        <button 
-          onClick={()=>setRecording(true)} 
-          disabled={recording || !playing}
-          className="glass rounded-full px-5 py-2.5 text-sm font-medium hover:bg-white/10 transition disabled:opacity-50"
-        >
-          {recording ? '📹 Recording...' : '📹 Record Video'}
         </button>
       </div>
     </div>
@@ -152,25 +199,27 @@ function CameraPath({ playing }: { playing: boolean }) {
   useFrame((state) => {
     if (!playing) return
     const t = state.clock.getElapsedTime()
-    // Smooth runway camera movement - follows model down runway
-    const walkProgress = (t * 0.3) % 8 // 8 second loop
+    const walkSpeed = 1.2
     
-    // Camera follows model with slight lead
-    const modelZ = Math.sin(walkProgress) * 1.2
-    const camZ = modelZ + 2.8
+    // Model position (forward/back on runway)
+    const modelZ = Math.sin(t * walkSpeed) * 1.5
     
-    // Smooth camera movement
-    const ease = (x: number) => x * x * (3 - 2 * x)
-    const smoothProgress = ease((walkProgress % 1))
+    // Camera follows model - professional fashion show angles
+    const cameraDistance = 4.2
+    const cameraHeight = 1.8
     
-    // Camera orbits slightly around the model
-    const angle = smoothProgress * Math.PI * 0.3 - Math.PI * 0.15
-    const radius = 3.0
-    const x = Math.sin(angle) * radius * 0.3
-    const y = 1.6 + Math.sin(walkProgress * 2) * 0.1
+    // Gentle side-to-side movement for dynamic shots
+    const sideOffset = Math.sin(t * walkSpeed * 0.5) * 0.3
     
-    state.camera.position.set(x, y, camZ)
-    state.camera.lookAt(0, -0.5 + modelZ * 0.2, modelZ)
+    // Camera position - follows model
+    state.camera.position.set(
+      sideOffset,
+      cameraHeight,
+      modelZ + cameraDistance
+    )
+    
+    // Look at model (slightly ahead for leading shot)
+    state.camera.lookAt(sideOffset * 0.5, 0.2 + modelZ * 0.05, modelZ - 0.3)
   })
   return null
 }

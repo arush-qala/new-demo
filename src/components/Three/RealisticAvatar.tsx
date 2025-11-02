@@ -3,6 +3,51 @@ import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 
+// Helper function to create smooth body curves using lathe geometry
+function createOrganicShape(points: number[][], segments: number = 32): THREE.LatheGeometry {
+  const shape = new THREE.Shape()
+  if (points.length > 0) {
+    shape.moveTo(points[0][0], points[0][1])
+    for (let i = 1; i < points.length; i++) {
+      shape.lineTo(points[i][0], points[i][1])
+    }
+    shape.lineTo(points[0][0], points[0][1])
+  }
+  return new THREE.LatheGeometry(shape.getPoints(), segments)
+}
+
+// Create realistic torso with smooth curves using tapered cylinders
+function createTorso(bust: number, waist: number, height: number): THREE.CylinderGeometry {
+  // Use a more sophisticated approach with multiple segments
+  const topRadius = bust * 0.18
+  const midRadius = waist * 0.15  
+  const bottomRadius = bust * 0.16
+  
+  // Create a smooth tapered cylinder for upper torso
+  return new THREE.CylinderGeometry(
+    midRadius, // top radius (smaller - waist)
+    topRadius, // bottom radius (larger - chest)
+    height * 0.5, // height
+    32, // radial segments
+    1 // height segments
+  )
+}
+
+// Create hips with smooth curves
+function createHips(hips: number, height: number): THREE.CylinderGeometry {
+  const topRadius = hips * 0.18
+  const bottomRadius = hips * 0.22
+  
+  // Smooth curved hips
+  return new THREE.CylinderGeometry(
+    topRadius,
+    bottomRadius,
+    height * 0.25,
+    32,
+    1
+  )
+}
+
 type BodyType = 'petite' | 'standard' | 'curvy' | 'athletic' | 'tall'
 
 type RealisticAvatarProps = {
@@ -65,12 +110,14 @@ export const RealisticAvatar: React.FC<RealisticAvatarProps> = ({
     })
   }, [texture])
   
-  // Skin material
+  // Skin material - more realistic with subtle variations
   const skinMaterial = useMemo(() => 
     new THREE.MeshStandardMaterial({
       color: '#F4DCC1',
-      roughness: 0.9,
-      metalness: 0.05,
+      roughness: 0.95,
+      metalness: 0.02,
+      emissive: new THREE.Color(0x000000),
+      emissiveIntensity: 0,
     }), [])
   
   // Apply pose animation
@@ -82,65 +129,111 @@ export const RealisticAvatar: React.FC<RealisticAvatarProps> = ({
     groupRef.current.position.z = Math.sin(pose * 0.5) * 0.1
   })
   
+  // Create realistic body geometries
+  const torsoGeometry = useMemo(() => 
+    createTorso(bustScale * 0.4, waistScale * 0.3, heightScale * 0.55), 
+    [bustScale, waistScale, heightScale]
+  )
+  
+  const hipsGeometry = useMemo(() => 
+    createHips(hipsScale * 0.4, heightScale * 0.25), 
+    [hipsScale, heightScale]
+  )
+  
+  // Create smooth arms and legs with tapered ends
+  const leftArmGeometry = useMemo(() => 
+    new THREE.CylinderGeometry(0.045 * heightScale, 0.035 * heightScale, 0.36 * heightScale, 16, 1),
+    [heightScale]
+  )
+  
+  const rightArmGeometry = useMemo(() => 
+    new THREE.CylinderGeometry(0.045 * heightScale, 0.035 * heightScale, 0.36 * heightScale, 16, 1),
+    [heightScale]
+  )
+  
+  const leftLegGeometry = useMemo(() => 
+    new THREE.CylinderGeometry(0.065 * heightScale, 0.055 * heightScale, 0.65 * heightScale, 16, 1),
+    [heightScale]
+  )
+  
+  const rightLegGeometry = useMemo(() => 
+    new THREE.CylinderGeometry(0.065 * heightScale, 0.055 * heightScale, 0.65 * heightScale, 16, 1),
+    [heightScale]
+  )
+  
   return (
     <group ref={groupRef} position={[0, -1.2, 0]}>
-      {/* Head */}
-      <mesh position={[0, 1.5 * heightScale, 0]} castShadow>
-        <sphereGeometry args={[0.12 * heightScale, 32, 32]} />
+      {/* Head - smooth sphere */}
+      <mesh position={[0, 1.52 * heightScale, 0]} castShadow>
+        <sphereGeometry args={[0.11 * heightScale, 32, 32]} />
         <primitive object={skinMaterial} attach="material" />
       </mesh>
       
-      {/* Neck */}
-      <mesh position={[0, 1.35 * heightScale, 0]} castShadow>
-        <cylinderGeometry args={[0.05 * heightScale, 0.06 * heightScale, 0.15 * heightScale, 16]} />
+      {/* Neck - smooth cylinder with taper */}
+      <mesh position={[0, 1.38 * heightScale, 0]} castShadow>
+        <cylinderGeometry args={[0.055 * heightScale, 0.065 * heightScale, 0.14 * heightScale, 16]} />
         <primitive object={skinMaterial} attach="material" />
       </mesh>
       
-      {/* Torso/Upper body */}
-      <mesh position={[0, 1.0 * heightScale, 0]} castShadow>
-        <boxGeometry args={[bustScale * 0.35, heightScale * 0.5, bustScale * 0.25]} />
+      {/* Upper torso with natural curves - covered by dress */}
+      <mesh 
+        position={[0, 1.15 * heightScale, 0]} 
+        geometry={torsoGeometry}
+        castShadow
+      >
         <primitive object={dressMaterial} attach="material" />
       </mesh>
       
-      {/* Waist */}
-      <mesh position={[0, 0.75 * heightScale, 0]} castShadow>
-        <boxGeometry args={[waistScale * 0.28, heightScale * 0.15, waistScale * 0.20]} />
+      {/* Hips area with natural curve */}
+      <mesh 
+        position={[0, 0.5 * heightScale, 0]} 
+        geometry={hipsGeometry}
+        castShadow
+      >
         <primitive object={dressMaterial} attach="material" />
       </mesh>
       
-      {/* Hips */}
-      <mesh position={[0, 0.55 * heightScale, 0]} castShadow>
-        <boxGeometry args={[hipsScale * 0.38, heightScale * 0.2, hipsScale * 0.28]} />
+      {/* Dress skirt - flowing with smooth taper */}
+      <mesh position={[0, 0.1 * heightScale, 0]} castShadow>
+        <cylinderGeometry args={[hipsScale * 0.32, hipsScale * 0.48, heightScale * 0.65, 32]} />
         <primitive object={dressMaterial} attach="material" />
       </mesh>
       
-      {/* Dress skirt - flowing down */}
-      <mesh position={[0, 0.15 * heightScale, 0]} castShadow>
-        <cylinderGeometry args={[hipsScale * 0.30, hipsScale * 0.45, heightScale * 0.6, 32]} />
-        <primitive object={dressMaterial} attach="material" />
-      </mesh>
-      
-      {/* Left arm */}
-      <mesh position={[-bustScale * 0.20, 1.0 * heightScale, 0]} rotation={[0, 0, 0.3]} castShadow>
-        <cylinderGeometry args={[0.05 * heightScale, 0.05 * heightScale, 0.35 * heightScale, 16]} />
+      {/* Left arm - smooth tapered */}
+      <mesh 
+        position={[-bustScale * 0.19, 1.05 * heightScale, 0]} 
+        rotation={[0, 0, 0.25]} 
+        geometry={leftArmGeometry}
+        castShadow
+      >
         <primitive object={skinMaterial} attach="material" />
       </mesh>
       
-      {/* Right arm */}
-      <mesh position={[bustScale * 0.20, 1.0 * heightScale, 0]} rotation={[0, 0, -0.3]} castShadow>
-        <cylinderGeometry args={[0.05 * heightScale, 0.05 * heightScale, 0.35 * heightScale, 16]} />
+      {/* Right arm - smooth tapered */}
+      <mesh 
+        position={[bustScale * 0.19, 1.05 * heightScale, 0]} 
+        rotation={[0, 0, -0.25]} 
+        geometry={rightArmGeometry}
+        castShadow
+      >
         <primitive object={skinMaterial} attach="material" />
       </mesh>
       
-      {/* Left leg */}
-      <mesh position={[-hipsScale * 0.10, 0.1 * heightScale, 0]} castShadow>
-        <cylinderGeometry args={[0.08 * heightScale, 0.08 * heightScale, 0.6 * heightScale, 16]} />
+      {/* Left leg - smooth tapered */}
+      <mesh 
+        position={[-hipsScale * 0.08, -0.15 * heightScale, 0]} 
+        geometry={leftLegGeometry}
+        castShadow
+      >
         <primitive object={skinMaterial} attach="material" />
       </mesh>
       
-      {/* Right leg */}
-      <mesh position={[hipsScale * 0.10, 0.1 * heightScale, 0]} castShadow>
-        <cylinderGeometry args={[0.08 * heightScale, 0.08 * heightScale, 0.6 * heightScale, 16]} />
+      {/* Right leg - smooth tapered */}
+      <mesh 
+        position={[hipsScale * 0.08, -0.15 * heightScale, 0]} 
+        geometry={rightLegGeometry}
+        castShadow
+      >
         <primitive object={skinMaterial} attach="material" />
       </mesh>
     </group>
