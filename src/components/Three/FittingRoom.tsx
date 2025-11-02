@@ -1,6 +1,25 @@
-import React, { Suspense, useMemo, useState } from 'react'
-import { Canvas, ErrorBoundary } from '@react-three/fiber'
+import React, { Suspense, useMemo, useState, Component, ReactNode } from 'react'
+import { Canvas } from '@react-three/fiber'
 import { Environment, OrbitControls, Stage, useGLTF, Box } from '@react-three/drei'
+
+class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode; fallback: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(error: Error, info: any) {
+    console.error('3D Error:', error, info)
+  }
+  render() {
+    if (this.state.hasError) {
+      return <>{this.props.fallback}</>
+    }
+    return <>{this.props.children}</>
+  }
+}
 
 type BodyType = 'petite' | 'standard' | 'curvy' | 'athletic' | 'tall'
 

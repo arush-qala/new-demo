@@ -1,6 +1,25 @@
-import React, { Suspense, useMemo, useRef, useState, useEffect } from 'react'
-import { Canvas, useFrame, ErrorBoundary } from '@react-three/fiber'
+import React, { Suspense, useMemo, useRef, useState, Component, ReactNode } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, OrbitControls, Stage, useGLTF, Box } from '@react-three/drei'
+
+class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode; fallback: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(error: Error, info: any) {
+    console.error('3D Error:', error, info)
+  }
+  render() {
+    if (this.state.hasError) {
+      return <>{this.props.fallback}</>
+    }
+    return <>{this.props.children}</>
+  }
+}
 
 type RunwayProps = {
   modelUrl: string
