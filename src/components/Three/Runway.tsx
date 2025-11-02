@@ -44,11 +44,9 @@ function SafeAvatar({ url, playing }: { url: string; playing: boolean }) {
       }
     })
     
-    return <Stage intensity={0.9} environment={null} shadows="contact">
-      <group ref={group} position={[0, -1.2, 0]}>
-        <primitive object={scene} />
-      </group>
-    </Stage>
+    return <group ref={group} position={[0, -1.2, 0]}>
+      <primitive object={scene} />
+    </group>
   } catch (err) {
     console.error('Avatar error:', err)
     return <AvatarFallback />
@@ -66,7 +64,9 @@ export const Runway: React.FC<RunwayProps> = ({ modelUrl, background }) => {
         <color attach="background" args={[bg]} />
         <Suspense fallback={<AvatarFallback />}>
           <ErrorBoundary fallback={<AvatarFallback />}>
-            <SafeAvatar url={safeUrl} playing={playing} />
+            <Stage intensity={0.9} environment={null} shadows="contact">
+              <SafeAvatar url={safeUrl} playing={playing} />
+            </Stage>
           </ErrorBoundary>
           <Environment preset="studio" />
         </Suspense>

@@ -48,9 +48,7 @@ function SafeAvatar({ url, heightScale = 1, pose = 0 }: { url: string; heightSca
     // Apply simple pose offsets
     scaled.rotation.y = Math.sin(pose) * 0.15
     scaled.position.z = Math.sin(pose * 0.5) * 0.1
-    return <Stage intensity={0.9} environment={null} shadows="contact">
-      <primitive object={scaled} position={[0, -1.2, 0]} />
-    </Stage>
+    return <primitive object={scaled} position={[0, -1.2, 0]} />
   } catch (err) {
     console.error('Avatar error:', err)
     return <AvatarFallback />
@@ -71,7 +69,9 @@ export const FittingRoom: React.FC = () => {
           <color attach="background" args={["#0f0f10"]} />
           <Suspense fallback={<AvatarFallback />}>
             <ErrorBoundary fallback={<AvatarFallback />}>
-              <SafeAvatar url={bodyToModel[bodyType]} heightScale={heightScale} pose={playing ? 1 : 0} />
+              <Stage intensity={0.9} environment={null} shadows="contact">
+                <SafeAvatar url={bodyToModel[bodyType]} heightScale={heightScale} pose={playing ? 1 : 0} />
+              </Stage>
             </ErrorBoundary>
             <Environment preset="studio" />
           </Suspense>
