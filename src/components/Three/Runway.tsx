@@ -63,24 +63,48 @@ function AnimatedRunwayAvatar({
     
     if (playing) {
       const t = state.clock.getElapsedTime()
-      const walkSpeed = 1.2
+      const walkSpeed = 1.0
+      const cycle = (t * walkSpeed) % 12 // 12 second cycle
       
-      // Forward/back movement along runway
-      const forward = Math.sin(t * walkSpeed) * 1.5
-      groupRef.current.position.z = forward
-      
-      // Vertical bounce in walk
-      const bounce = Math.abs(Math.sin(t * walkSpeed * 2)) * 0.04
-      groupRef.current.position.y = bounce
-      
-      // Hip sway for natural walk
-      groupRef.current.rotation.y = Math.sin(t * walkSpeed) * 0.08
-      
-      // Slight shoulder tilt
-      groupRef.current.rotation.x = Math.sin(t * walkSpeed * 2) * 0.015
-      
-      // Pose value for avatar animation
-      poseRef.current = t * walkSpeed
+      // Phase 1: Walking forward (0-4s)
+      if (cycle < 4) {
+        const phase = cycle / 4
+        const forward = Math.sin(phase * Math.PI) * 2.0
+        groupRef.current.position.z = forward
+        groupRef.current.position.y = Math.abs(Math.sin(phase * Math.PI * 4)) * 0.04
+        groupRef.current.rotation.y = Math.sin(phase * Math.PI * 4) * 0.06
+        groupRef.current.rotation.x = Math.sin(phase * Math.PI * 2) * 0.01
+        poseRef.current = cycle
+      }
+      // Phase 2: Twirl (4-6s)
+      else if (cycle < 6) {
+        const phase = (cycle - 4) / 2
+        const twirl = phase * Math.PI * 2 // Full 360 degree twirl
+        groupRef.current.position.z = 2.0 + Math.sin(phase * Math.PI) * 0.3
+        groupRef.current.rotation.y = twirl
+        groupRef.current.position.y = Math.sin(phase * Math.PI) * 0.08
+        groupRef.current.rotation.x = Math.sin(phase * Math.PI * 2) * 0.05
+        poseRef.current = 4 + phase * 2
+      }
+      // Phase 3: Posing (6-9s)
+      else if (cycle < 9) {
+        const phase = (cycle - 6) / 3
+        groupRef.current.position.z = 2.3 - phase * 0.5
+        groupRef.current.rotation.y = Math.sin(phase * Math.PI * 2) * 0.3
+        groupRef.current.rotation.x = Math.sin(phase * Math.PI) * -0.02
+        groupRef.current.position.y = Math.sin(phase * Math.PI * 4) * 0.02
+        poseRef.current = 6 + phase * 2
+      }
+      // Phase 4: Walking back (9-12s)
+      else {
+        const phase = (cycle - 9) / 3
+        const forward = 1.8 - Math.sin(phase * Math.PI) * 2.0
+        groupRef.current.position.z = forward
+        groupRef.current.position.y = Math.abs(Math.sin(phase * Math.PI * 4)) * 0.04
+        groupRef.current.rotation.y = -Math.sin(phase * Math.PI * 4) * 0.06
+        groupRef.current.rotation.x = Math.sin(phase * Math.PI * 2) * 0.01
+        poseRef.current = 9 + phase * 2
+      }
     } else {
       groupRef.current.position.set(0, 0, 0)
       groupRef.current.rotation.set(0, 0, 0)

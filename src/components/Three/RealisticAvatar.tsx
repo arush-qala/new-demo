@@ -110,12 +110,12 @@ export const RealisticAvatar: React.FC<RealisticAvatarProps> = ({
     })
   }, [texture])
   
-  // Skin material - more realistic with subtle variations
+  // Skin material - realistic caucasian skin tone
   const skinMaterial = useMemo(() => 
     new THREE.MeshStandardMaterial({
-      color: '#F4DCC1',
-      roughness: 0.95,
-      metalness: 0.02,
+      color: '#F5D5C0', // Warm caucasian skin tone
+      roughness: 0.92,
+      metalness: 0.01,
       emissive: new THREE.Color(0x000000),
       emissiveIntensity: 0,
     }), [])
@@ -163,10 +163,39 @@ export const RealisticAvatar: React.FC<RealisticAvatarProps> = ({
   
   return (
     <group ref={groupRef} position={[0, -1.2, 0]}>
-      {/* Head - smooth sphere */}
+      {/* Head - realistic female head with face features */}
       <mesh position={[0, 1.52 * heightScale, 0]} castShadow>
         <sphereGeometry args={[0.11 * heightScale, 32, 32]} />
         <primitive object={skinMaterial} attach="material" />
+      </mesh>
+      
+      {/* Hair - realistic hair volume */}
+      <mesh position={[0, 1.58 * heightScale, 0.02 * heightScale]} castShadow>
+        <sphereGeometry args={[0.12 * heightScale, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.6]} />
+        <meshStandardMaterial color="#3d2817" roughness={0.9} />
+      </mesh>
+      
+      {/* Simple facial features for realism */}
+      {/* Eyes */}
+      <mesh position={[-0.03 * heightScale, 1.54 * heightScale, 0.095 * heightScale]}>
+        <sphereGeometry args={[0.008 * heightScale, 16, 16]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      <mesh position={[0.03 * heightScale, 1.54 * heightScale, 0.095 * heightScale]}>
+        <sphereGeometry args={[0.008 * heightScale, 16, 16]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      
+      {/* Simple nose */}
+      <mesh position={[0, 1.51 * heightScale, 0.1 * heightScale]} rotation={[0, 0, 0]}>
+        <coneGeometry args={[0.005 * heightScale, 0.015 * heightScale, 8]} />
+        <primitive object={skinMaterial} attach="material" />
+      </mesh>
+      
+      {/* Simple mouth */}
+      <mesh position={[0, 1.48 * heightScale, 0.098 * heightScale]} rotation={[0, 0, 0]}>
+        <torusGeometry args={[0.015 * heightScale, 0.003 * heightScale, 8, 16, Math.PI]} />
+        <meshStandardMaterial color="#8b4a3f" />
       </mesh>
       
       {/* Neck - smooth cylinder with taper */}
@@ -184,9 +213,18 @@ export const RealisticAvatar: React.FC<RealisticAvatarProps> = ({
         <primitive object={dressMaterial} attach="material" />
       </mesh>
       
-      {/* Hips area with natural curve */}
+      {/* Waist connector - smooth transition between torso and hips */}
       <mesh 
-        position={[0, 0.5 * heightScale, 0]} 
+        position={[0, 0.82 * heightScale, 0]} 
+        castShadow
+      >
+        <cylinderGeometry args={[waistScale * 0.28, waistScale * 0.28, heightScale * 0.12, 32]} />
+        <primitive object={dressMaterial} attach="material" />
+      </mesh>
+      
+      {/* Hips area with natural curve - positioned to connect seamlessly */}
+      <mesh 
+        position={[0, 0.6 * heightScale, 0]} 
         geometry={hipsGeometry}
         castShadow
       >

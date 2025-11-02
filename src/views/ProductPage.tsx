@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { FittingRoom } from '@/components/Three/FittingRoom'
 import { Runway } from '@/components/Three/Runway'
+import { BrandKitOverlay } from '@/components/BrandKitOverlay'
 
 // Product images - using local images from public/images/products folder
 // For evening-dress-aurum: official product photography from Khara Kapas
@@ -41,11 +42,19 @@ const getDefaultImages = (productSlug?: string, product?: { cover: string }): st
 export const ProductPage: React.FC = () => {
   const { productSlug } = useParams()
   const [spinIndex, setSpinIndex] = useState(0)
-  const { addKitItem, products } = useStore()
+  const [isBrandKitOpen, setIsBrandKitOpen] = useState(false)
+  const { products } = useStore()
   const product = products.find(p => p.slug === productSlug)
   const productImageSet = getDefaultImages(productSlug, product)
 
   return (
+    <>
+      <BrandKitOverlay
+        isOpen={isBrandKitOpen}
+        onClose={() => setIsBrandKitOpen(false)}
+        brandSlug={product?.brandSlug || ''}
+        productSlug={productSlug}
+      />
     <div className="space-y-10">
       <div className="grid md:grid-cols-2 gap-8 items-start">
         <div className="space-y-4">
@@ -78,7 +87,7 @@ export const ProductPage: React.FC = () => {
             • Pure silk crepe • Mother-of-pearl buttons • Hand embroidery
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <button onClick={()=>{ if(productSlug) { addKitItem(productSlug) } }} className="glass rounded-lg py-3 text-sm">Add to Brand Kit</button>
+            <button onClick={() => setIsBrandKitOpen(true)} className="glass rounded-lg py-3 text-sm">Order Brand Kit</button>
             <Link to={`/bulk-order/${productSlug}`} className="glass rounded-lg py-3 text-sm text-center">Bulk Order</Link>
           </div>
           <Link to="/kit" className="text-xs text-neutral-300 hover:text-white">Go to Brand Kit</Link>
@@ -96,6 +105,7 @@ export const ProductPage: React.FC = () => {
         <Runway modelUrl="https://assets.pmnd.rs/models/Flamingo.glb" productImage={productImageSet[0]} />
       </section>
     </div>
+    </>
   )
 }
 
