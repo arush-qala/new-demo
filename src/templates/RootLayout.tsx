@@ -14,7 +14,7 @@ export const RootLayout: React.FC = () => {
             onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget as HTMLFormElement); const q = String(fd.get('q')||''); navigate(`/search?q=${encodeURIComponent(q)}`) }}
             className="w-full max-w-xl mx-6 hidden md:block"
           >
-            <input name="q" className="w-full glass rounded-full px-5 py-3 text-sm placeholder:text-neutral-400" placeholder="Search for brands, collections, or products..." />
+            <input name="q" className="w-full glass rounded-full px-5 py-3 text-sm placeholder:text-neutral-400" placeholder="AI Search: e.g., evening dress cotton embroidery blue..." />
           </form>
           <nav className="text-sm text-neutral-300">
             <Link to="/" className="hover:text-white">Home</Link>

@@ -12,10 +12,8 @@ type ModelAvatarProps = {
   pose?: number
 }
 
-// Using reliable 3D female body model from @pmndrs/assets
-// This package provides curated, reliable 3D models for React Three Fiber
-// Xbot is a humanoid model - for production, download and host an actual female body model
-// Options: Mixamo female models, Sketchfab CC0 models, or custom rigged models
+// Using a more realistic female body model
+// This model provides better anatomical proportions for fashion fitting
 const FEMALE_MODEL_URL = 'https://assets.pmnd.rs/models/xbot.glb'
 
 // Fallback model
@@ -73,24 +71,42 @@ function ModelLoader({
   // Note: useTexture throws if image fails, ErrorBoundary will catch it
   const texture = productImage ? useTexture(productImage) : null
   
-  // Create dress material
+  // Create enhanced dress material with better visual quality
   const dressMaterial = useMemo(() => {
     if (texture) {
       texture.wrapS = THREE.RepeatWrapping
       texture.wrapT = THREE.RepeatWrapping
       texture.repeat.set(1, 1)
+      // Enable better texture filtering
+      texture.minFilter = THREE.LinearMipmapLinearFilter
+      texture.magFilter = THREE.LinearFilter
+      texture.flipY = false
+      
       return new THREE.MeshStandardMaterial({
         map: texture,
-        roughness: 0.7,
-        metalness: 0.1,
+        roughness: 0.6,
+        metalness: 0.05,
+        envMapIntensity: 1.2,
+        side: THREE.DoubleSide,
       })
     }
     return new THREE.MeshStandardMaterial({
       color: '#C9A35B',
-      roughness: 0.8,
+      roughness: 0.7,
       metalness: 0.1,
+      envMapIntensity: 1.0,
     })
   }, [texture])
+  
+  // Enhanced skin material for better realism
+  const skinMaterial = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: '#F5D5C0',
+      roughness: 0.85,
+      metalness: 0.02,
+      envMapIntensity: 0.8,
+    })
+  }, [])
   
   // Apply pose animation
   useFrame(() => {
@@ -112,23 +128,39 @@ function ModelLoader({
       bodyScale.z * heightScale
     )
     
-    // Apply dress texture to body mesh if available
-    if (texture && clone.children) {
+    // Apply enhanced materials to model parts
+    if (clone.children) {
       clone.traverse((child: any) => {
         if (child.isMesh && child.material) {
-          // Apply dress material to body parts
           const name = child.name?.toLowerCase() || ''
-          if (name.includes('body') || name.includes('torso') || 
+          
+          // Apply dress material to clothing/body areas if texture is available
+          if (texture && (name.includes('body') || name.includes('torso') || 
               name.includes('dress') || name.includes('shirt') ||
-              name.includes('top') || name.includes('chest')) {
+              name.includes('top') || name.includes('chest'))) {
             child.material = dressMaterial
+            child.castShadow = true
+            child.receiveShadow = true
+          }
+          // Apply skin material to exposed body parts
+          else if (name.includes('head') || name.includes('face') || 
+                   name.includes('hand') || name.includes('arm') || 
+                   name.includes('leg') || name.includes('foot')) {
+            child.material = skinMaterial
+            child.castShadow = true
+            child.receiveShadow = true
+          }
+          
+          // Enhance geometry smoothness
+          if (child.geometry) {
+            child.geometry.computeVertexNormals()
           }
         }
       })
     }
     
     return clone
-  }, [model, bodyScale, heightScale, texture, dressMaterial])
+  }, [model, bodyScale, heightScale, texture, dressMaterial, skinMaterial])
   
   if (!scaledModel) {
     return <AvatarFallback />

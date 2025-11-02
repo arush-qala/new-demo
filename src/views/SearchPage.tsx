@@ -1,19 +1,17 @@
 import React, { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
+import { aiSearch } from '@/utils/aiSearch'
 
 export const SearchPage: React.FC = () => {
   const [params] = useSearchParams()
-  const q = (params.get('q') || '').toLowerCase()
+  const q = params.get('q') || ''
   const { brands, products } = useStore()
 
-  const brandMatches = useMemo(() => brands.filter(b => (
-    b.name.toLowerCase().includes(q) || (b.tagline?.toLowerCase().includes(q))
-  )), [brands, q])
-
-  const productMatches = useMemo(() => products.filter(p => (
-    p.name.toLowerCase().includes(q)
-  )), [products, q])
+  // Use AI-powered semantic search
+  const { products: productMatches, brands: brandMatches } = useMemo(() => {
+    return aiSearch(q, products, brands)
+  }, [q, products, brands])
 
   return (
     <div className="space-y-8">
