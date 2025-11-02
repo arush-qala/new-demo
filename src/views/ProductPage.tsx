@@ -4,15 +4,15 @@ import { useStore } from '@/store/useStore'
 import { FittingRoom } from '@/components/Three/FittingRoom'
 import { Runway } from '@/components/Three/Runway'
 
-// Product images - using the same product images from the product page
-// For evening-dress-aurum: using high-quality fashion photography of the floral maxi dress
+// Product images - using local images from public/images/products folder
+// For evening-dress-aurum: official product photography from Khara Kapas
 const productImages: Record<string, string[]> = {
   'evening-dress-aurum': [
-    'https://images.unsplash.com/photo-1594633313593-bab3825d0caf?q=80&w=1200&auto=format&fit=crop', // Front view
-    'https://images.unsplash.com/photo-1594633312688-0b0772e5b2dc?q=80&w=1200&auto=format&fit=crop', // Side/twirl
-    'https://images.unsplash.com/photo-1594633313593-bab3825d0caf?q=80&w=1200&auto=format&fit=crop', // Back view  
-    'https://images.unsplash.com/photo-1594633312688-0b0772e5b2dc?q=80&w=1200&auto=format&fit=crop', // Detail
-    'https://images.unsplash.com/photo-1594633313593-bab3825d0caf?q=80&w=1200&auto=format&fit=crop', // Full
+    '/images/products/0-42_1_1583f7d9-340d-409e-bfe8-ed4a3fe101e7.jpg', // View 1
+    '/images/products/0-44_2_cd62e9f6-b52f-4ef4-8aac-b2e3309b9150.jpg', // View 2
+    '/images/products/0-45_1_cd41aff5-caf7-47fa-98dc-a6940209715e.jpg', // View 3
+    '/images/products/0-43_1_075f40cb-d2f8-4d90-bb93-50d3895a6c69.jpg', // View 4
+    '/images/products/0-41_1_84c14f45-3a2d-4f66-95cd-7a203fb82f1e.jpg', // View 5
   ],
 }
 

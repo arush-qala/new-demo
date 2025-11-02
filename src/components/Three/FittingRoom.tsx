@@ -1,6 +1,7 @@
 import React, { Suspense, useMemo, useState, Component, ReactNode, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { Environment, OrbitControls, Stage, useGLTF, Box } from '@react-three/drei'
+import { Environment, OrbitControls, Stage, Box } from '@react-three/drei'
+import { RealisticAvatar } from './RealisticAvatar'
 
 class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode; fallback: ReactNode }) {
@@ -27,18 +28,7 @@ type FittingRoomProps = {
   productImage?: string
 }
 
-// Using realistic humanoid models - these are placeholder URLs that will work
-// In production, you'd use actual 3D avatar models extracted/created from the product images
-const DEFAULT_MODEL = 'https://assets.pmnd.rs/models/Flamingo.glb'
-
-// Body type models - using procedural scaling for different body types
-const bodyToModel: Record<BodyType, { url: string; scale: { x: number; y: number; z: number } }> = {
-  petite: { url: DEFAULT_MODEL, scale: { x: 0.85, y: 0.90, z: 0.85 } },
-  standard: { url: DEFAULT_MODEL, scale: { x: 1.0, y: 1.0, z: 1.0 } },
-  curvy: { url: DEFAULT_MODEL, scale: { x: 1.15, y: 1.05, z: 1.20 } },
-  athletic: { url: DEFAULT_MODEL, scale: { x: 1.10, y: 1.15, z: 1.05 } },
-  tall: { url: DEFAULT_MODEL, scale: { x: 1.0, y: 1.20, z: 1.0 } },
-}
+// RealisticAvatar component now handles all body types with procedural generation
 
 function AvatarFallback() {
   return (
@@ -56,61 +46,11 @@ function AvatarFallback() {
   )
 }
 
-function SafeAvatar({ 
-  url, 
-  scale, 
-  heightScale = 1, 
-  pose = 0,
-  productImage 
-}: { 
-  url: string
-  scale?: { x: number; y: number; z: number }
-  heightScale?: number
-  pose?: number
-  productImage?: string
-}) {
-  // Only use safe URLs - block readyplayer.me URLs
-  const safeUrl = url && !url.includes('readyplayer.me') 
-    ? url 
-    : DEFAULT_MODEL
-  
-  try {
-    const { scene } = useGLTF(safeUrl)
-    const scaled = useMemo(() => {
-      const clone = scene.clone()
-      const baseScale = heightScale
-      const bodyScale = scale || { x: 1, y: 1, z: 1 }
-      clone.scale.set(
-        bodyScale.x * baseScale,
-        bodyScale.y * baseScale,
-        bodyScale.z * baseScale
-      )
-      return clone
-    }, [scene, heightScale, scale])
-    
-    // Apply realistic pose offsets for runway walk
-    const poseRotation = Math.sin(pose) * 0.12
-    const poseMovement = Math.sin(pose * 0.6) * 0.15
-    scaled.rotation.y = poseRotation
-    scaled.position.z = poseMovement
-    
-    // Apply garment texture if product image provided (future enhancement)
-    if (productImage) {
-      // This would apply the dress texture to the model in a real implementation
-    }
-    
-    return <primitive object={scaled} position={[0, -1.2, 0]} />
-  } catch (err) {
-    console.error('Avatar error:', err)
-    return <AvatarFallback />
-  }
-}
 
 export const FittingRoom: React.FC<FittingRoomProps> = ({ productImage }) => {
   const [bodyType, setBodyType] = useState<BodyType>('standard')
   const [measurements, setMeasurements] = useState({ bust: 90, waist: 72, hips: 96, height: 168 })
 
-  const bodyConfig = bodyToModel[bodyType]
   const heightScale = useMemo(() => Math.max(0.9, Math.min(1.1, measurements.height / 168)), [measurements.height])
   const [playing, setPlaying] = useState(false)
   const [time, setTime] = useState(0)
@@ -130,12 +70,11 @@ export const FittingRoom: React.FC<FittingRoomProps> = ({ productImage }) => {
           <Suspense fallback={<AvatarFallback />}>
             <ErrorBoundary fallback={<AvatarFallback />}>
               <Stage intensity={1.1} environment="city" shadows="contact">
-                <SafeAvatar 
-                  url={bodyConfig.url} 
-                  scale={bodyConfig.scale}
-                  heightScale={heightScale} 
-                  pose={playing ? time : 0}
+                <RealisticAvatar
+                  bodyType={bodyType}
+                  measurements={measurements}
                   productImage={productImage}
+                  pose={playing ? time : 0}
                 />
               </Stage>
             </ErrorBoundary>
