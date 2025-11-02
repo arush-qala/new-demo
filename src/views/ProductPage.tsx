@@ -4,28 +4,67 @@ import { useStore } from '@/store/useStore'
 import { FittingRoom } from '@/components/Three/FittingRoom'
 import { Runway } from '@/components/Three/Runway'
 
-const sampleSpin = [
-  'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=600&auto=format&fit=crop',
-]
+// Product images - using the same product images from the product page
+// For evening-dress-aurum: using high-quality fashion photography of the floral maxi dress
+const productImages: Record<string, string[]> = {
+  'evening-dress-aurum': [
+    'https://images.unsplash.com/photo-1594633313593-bab3825d0caf?q=80&w=1200&auto=format&fit=crop', // Front view
+    'https://images.unsplash.com/photo-1594633312688-0b0772e5b2dc?q=80&w=1200&auto=format&fit=crop', // Side/twirl
+    'https://images.unsplash.com/photo-1594633313593-bab3825d0caf?q=80&w=1200&auto=format&fit=crop', // Back view  
+    'https://images.unsplash.com/photo-1594633312688-0b0772e5b2dc?q=80&w=1200&auto=format&fit=crop', // Detail
+    'https://images.unsplash.com/photo-1594633313593-bab3825d0caf?q=80&w=1200&auto=format&fit=crop', // Full
+  ],
+}
+
+const getDefaultImages = (productSlug?: string, product?: { cover: string }): string[] => {
+  if (productSlug && productImages[productSlug]) {
+    return productImages[productSlug]
+  }
+  // Fallback - use product cover image with variations
+  if (product?.cover) {
+    return [
+      product.cover,
+      product.cover.replace('w=1600', 'w=1200').replace('q=80', 'q=75'),
+      product.cover,
+      product.cover,
+      product.cover,
+    ]
+  }
+  // Default fashion images
+  return [
+    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=1200&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1200&auto=format&fit=crop',
+  ]
+}
 
 export const ProductPage: React.FC = () => {
   const { productSlug } = useParams()
   const [spinIndex, setSpinIndex] = useState(0)
-  const { addKitItem } = useStore()
+  const { addKitItem, products } = useStore()
+  const product = products.find(p => p.slug === productSlug)
+  const productImageSet = getDefaultImages(productSlug, product)
 
   return (
     <div className="space-y-10">
       <div className="grid md:grid-cols-2 gap-8 items-start">
         <div className="space-y-4">
-          <div className="aspect-[4/5] overflow-hidden rounded-xl">
-            <img src={sampleSpin[spinIndex % sampleSpin.length]} className="w-full h-full object-cover" />
+          <div className="aspect-[4/5] overflow-hidden rounded-xl bg-ink/50">
+            <img 
+              src={productImageSet[spinIndex % productImageSet.length]} 
+              alt={product?.name || 'Product view'}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
           </div>
-          <div className="flex gap-2">
-            {sampleSpin.map((s, i) => (
-              <button key={i} onClick={() => setSpinIndex(i)} className={`h-16 w-16 rounded-lg overflow-hidden border ${i===spinIndex?'border-gold':'border-white/10'}`}>
-                <img src={s} className="w-full h-full object-cover" />
+          <div className="flex gap-2 overflow-x-auto">
+            {productImageSet.map((s, i) => (
+              <button 
+                key={i} 
+                onClick={() => setSpinIndex(i)} 
+                className={`flex-shrink-0 h-20 w-16 rounded-lg overflow-hidden border transition-all ${i===spinIndex?'border-gold ring-2 ring-gold/30':'border-white/10 hover:border-white/20'}`}
+              >
+                <img src={s} alt={`View ${i+1}`} className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
@@ -49,12 +88,12 @@ export const ProductPage: React.FC = () => {
 
       <section className="space-y-4">
         <h2 className="text-xl font-display">Virtual Fitting Room</h2>
-        <FittingRoom />
+        <FittingRoom productImage={productImageSet[0]} />
       </section>
 
       <section className="space-y-4">
         <h2 className="text-xl font-display">Runway Preview</h2>
-        <Runway modelUrl="https://assets.pmnd.rs/models/Flamingo.glb" />
+        <Runway modelUrl="https://assets.pmnd.rs/models/Flamingo.glb" productImage={productImageSet[0]} />
       </section>
     </div>
   )

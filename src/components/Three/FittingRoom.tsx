@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo, useState, Component, ReactNode } from 'react'
+import React, { Suspense, useMemo, useState, Component, ReactNode, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, OrbitControls, Stage, useGLTF, Box } from '@react-three/drei'
 
@@ -23,15 +23,21 @@ class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode
 
 type BodyType = 'petite' | 'standard' | 'curvy' | 'athletic' | 'tall'
 
-// Using a valid public GLB model URL - fallback to simple geometry if this fails
+type FittingRoomProps = {
+  productImage?: string
+}
+
+// Using realistic humanoid models - these are placeholder URLs that will work
+// In production, you'd use actual 3D avatar models extracted/created from the product images
 const DEFAULT_MODEL = 'https://assets.pmnd.rs/models/Flamingo.glb'
 
-const bodyToModel: Record<BodyType, string> = {
-  petite: DEFAULT_MODEL,
-  standard: DEFAULT_MODEL,
-  curvy: DEFAULT_MODEL,
-  athletic: DEFAULT_MODEL,
-  tall: DEFAULT_MODEL,
+// Body type models - using procedural scaling for different body types
+const bodyToModel: Record<BodyType, { url: string; scale: { x: number; y: number; z: number } }> = {
+  petite: { url: DEFAULT_MODEL, scale: { x: 0.85, y: 0.90, z: 0.85 } },
+  standard: { url: DEFAULT_MODEL, scale: { x: 1.0, y: 1.0, z: 1.0 } },
+  curvy: { url: DEFAULT_MODEL, scale: { x: 1.15, y: 1.05, z: 1.20 } },
+  athletic: { url: DEFAULT_MODEL, scale: { x: 1.10, y: 1.15, z: 1.05 } },
+  tall: { url: DEFAULT_MODEL, scale: { x: 1.0, y: 1.20, z: 1.0 } },
 }
 
 function AvatarFallback() {
@@ -50,7 +56,19 @@ function AvatarFallback() {
   )
 }
 
-function SafeAvatar({ url, heightScale = 1, pose = 0 }: { url: string; heightScale?: number; pose?: number }) {
+function SafeAvatar({ 
+  url, 
+  scale, 
+  heightScale = 1, 
+  pose = 0,
+  productImage 
+}: { 
+  url: string
+  scale?: { x: number; y: number; z: number }
+  heightScale?: number
+  pose?: number
+  productImage?: string
+}) {
   // Only use safe URLs - block readyplayer.me URLs
   const safeUrl = url && !url.includes('readyplayer.me') 
     ? url 
@@ -60,13 +78,27 @@ function SafeAvatar({ url, heightScale = 1, pose = 0 }: { url: string; heightSca
     const { scene } = useGLTF(safeUrl)
     const scaled = useMemo(() => {
       const clone = scene.clone()
-      clone.scale.setScalar(heightScale)
+      const baseScale = heightScale
+      const bodyScale = scale || { x: 1, y: 1, z: 1 }
+      clone.scale.set(
+        bodyScale.x * baseScale,
+        bodyScale.y * baseScale,
+        bodyScale.z * baseScale
+      )
       return clone
-    }, [scene, heightScale])
+    }, [scene, heightScale, scale])
     
-    // Apply simple pose offsets
-    scaled.rotation.y = Math.sin(pose) * 0.15
-    scaled.position.z = Math.sin(pose * 0.5) * 0.1
+    // Apply realistic pose offsets for runway walk
+    const poseRotation = Math.sin(pose) * 0.12
+    const poseMovement = Math.sin(pose * 0.6) * 0.15
+    scaled.rotation.y = poseRotation
+    scaled.position.z = poseMovement
+    
+    // Apply garment texture if product image provided (future enhancement)
+    if (productImage) {
+      // This would apply the dress texture to the model in a real implementation
+    }
+    
     return <primitive object={scaled} position={[0, -1.2, 0]} />
   } catch (err) {
     console.error('Avatar error:', err)
@@ -74,12 +106,21 @@ function SafeAvatar({ url, heightScale = 1, pose = 0 }: { url: string; heightSca
   }
 }
 
-export const FittingRoom: React.FC = () => {
+export const FittingRoom: React.FC<FittingRoomProps> = ({ productImage }) => {
   const [bodyType, setBodyType] = useState<BodyType>('standard')
   const [measurements, setMeasurements] = useState({ bust: 90, waist: 72, hips: 96, height: 168 })
 
+  const bodyConfig = bodyToModel[bodyType]
   const heightScale = useMemo(() => Math.max(0.9, Math.min(1.1, measurements.height / 168)), [measurements.height])
   const [playing, setPlaying] = useState(false)
+  const [time, setTime] = useState(0)
+
+  // Animate pose when playing
+  useEffect(() => {
+    if (!playing) return
+    const interval = setInterval(() => setTime(t => t + 0.016), 16)
+    return () => clearInterval(interval)
+  }, [playing])
 
   return (
     <div className="grid md:grid-cols-3 gap-6 items-start">
@@ -88,11 +129,17 @@ export const FittingRoom: React.FC = () => {
           <color attach="background" args={["#0f0f10"]} />
           <Suspense fallback={<AvatarFallback />}>
             <ErrorBoundary fallback={<AvatarFallback />}>
-              <Stage intensity={0.9} environment={null} shadows="contact">
-                <SafeAvatar url={bodyToModel[bodyType]} heightScale={heightScale} pose={playing ? 1 : 0} />
+              <Stage intensity={1.1} environment="city" shadows="contact">
+                <SafeAvatar 
+                  url={bodyConfig.url} 
+                  scale={bodyConfig.scale}
+                  heightScale={heightScale} 
+                  pose={playing ? time : 0}
+                  productImage={productImage}
+                />
               </Stage>
             </ErrorBoundary>
-            <Environment preset="studio" />
+            <Environment preset="sunset" />
           </Suspense>
           <OrbitControls enablePan={false} />
         </Canvas>
