@@ -54,7 +54,7 @@ export const ProductPage: React.FC = () => {
 
       <section className="space-y-4">
         <h2 className="text-xl font-display">Runway Preview</h2>
-        <Runway modelUrl="https://models.readyplayer.me/6615b7e0834cb1a3ea5f9c95.glb" />
+        <Runway modelUrl="https://assets.pmnd.rs/models/Flamingo.glb" />
       </section>
     </div>
   )

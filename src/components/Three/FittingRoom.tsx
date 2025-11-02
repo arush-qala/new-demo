@@ -1,28 +1,53 @@
 import React, { Suspense, useMemo, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { Environment, OrbitControls, Stage, useGLTF } from '@react-three/drei'
+import { Canvas, ErrorBoundary } from '@react-three/fiber'
+import { Environment, OrbitControls, Stage, useGLTF, Box } from '@react-three/drei'
 
 type BodyType = 'petite' | 'standard' | 'curvy' | 'athletic' | 'tall'
 
+// Using a valid public GLB model URL - fallback to simple geometry if this fails
+const DEFAULT_MODEL = 'https://assets.pmnd.rs/models/Flamingo.glb'
+
 const bodyToModel: Record<BodyType, string> = {
-  petite: 'https://models.readyplayer.me/6615b7e0834cb1a3ea5f9c95.glb',
-  standard: 'https://models.readyplayer.me/6615b7e0834cb1a3ea5f9c95.glb',
-  curvy: 'https://models.readyplayer.me/6615b7e0834cb1a3ea5f9c95.glb',
-  athletic: 'https://models.readyplayer.me/6615b7e0834cb1a3ea5f9c95.glb',
-  tall: 'https://models.readyplayer.me/6615b7e0834cb1a3ea5f9c95.glb',
+  petite: DEFAULT_MODEL,
+  standard: DEFAULT_MODEL,
+  curvy: DEFAULT_MODEL,
+  athletic: DEFAULT_MODEL,
+  tall: DEFAULT_MODEL,
+}
+
+function AvatarFallback() {
+  return (
+    <group position={[0, -1.2, 0]}>
+      <Box args={[0.5, 1.6, 0.3]} position={[0, 0.8, 0]}>
+        <meshStandardMaterial color="#C9A35B" />
+      </Box>
+      <Box args={[0.6, 0.4, 0.3]} position={[0, 0, 0]}>
+        <meshStandardMaterial color="#C9A35B" />
+      </Box>
+      <Box args={[0.4, 0.8, 0.3]} position={[0, -0.8, 0]}>
+        <meshStandardMaterial color="#C9A35B" />
+      </Box>
+    </group>
+  )
 }
 
 function Avatar({ url, heightScale = 1, pose = 0 }: { url: string; heightScale?: number; pose?: number }) {
-  const { scene } = useGLTF(url)
-  const scaled = useMemo(() => {
-    const clone = scene.clone()
-    clone.scale.setScalar(heightScale)
-    return clone
-  }, [scene, heightScale])
-  // Apply simple pose offsets
-  scaled.rotation.y = Math.sin(pose) * 0.15
-  scaled.position.z = Math.sin(pose * 0.5) * 0.1
-  return <primitive object={scaled} position={[0, -1.2, 0]} />
+  try {
+    const { scene } = useGLTF(url)
+    const scaled = useMemo(() => {
+      const clone = scene.clone()
+      clone.scale.setScalar(heightScale)
+      return clone
+    }, [scene, heightScale])
+    
+    // Apply simple pose offsets
+    scaled.rotation.y = Math.sin(pose) * 0.15
+    scaled.position.z = Math.sin(pose * 0.5) * 0.1
+    return <primitive object={scaled} position={[0, -1.2, 0]} />
+  } catch (err) {
+    console.error('Avatar error:', err)
+    return <AvatarFallback />
+  }
 }
 
 export const FittingRoom: React.FC = () => {
@@ -37,10 +62,12 @@ export const FittingRoom: React.FC = () => {
       <div className="md:col-span-2 rounded-xl overflow-hidden" style={{ height: 480 }}>
         <Canvas camera={{ position: [2.3, 1.6, 2.6], fov: 45 }}>
           <color attach="background" args={["#0f0f10"]} />
-          <Suspense fallback={null}>
-            <Stage intensity={0.9} environment={null} shadows="contact">
-              <Avatar url={bodyToModel[bodyType]} heightScale={heightScale} pose={playing ? 1 : 0} />
-            </Stage>
+          <Suspense fallback={<AvatarFallback />}>
+            <ErrorBoundary fallback={<AvatarFallback />}>
+              <Stage intensity={0.9} environment={null} shadows="contact">
+                <Avatar url={bodyToModel[bodyType]} heightScale={heightScale} pose={playing ? 1 : 0} />
+              </Stage>
+            </ErrorBoundary>
             <Environment preset="studio" />
           </Suspense>
           <OrbitControls enablePan={false} />
@@ -74,5 +101,5 @@ export const FittingRoom: React.FC = () => {
   )
 }
 
-useGLTF.preload('https://models.readyplayer.me/6615b7e0834cb1a3ea5f9c95.glb')
+// Preload removed - models will load on demand
 

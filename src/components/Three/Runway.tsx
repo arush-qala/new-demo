@@ -1,40 +1,70 @@
 import React, { Suspense, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, OrbitControls, Stage, useGLTF } from '@react-three/drei'
+import { Canvas, useFrame, ErrorBoundary } from '@react-three/fiber'
+import { Environment, OrbitControls, Stage, useGLTF, Box } from '@react-three/drei'
 
 type RunwayProps = {
   modelUrl: string
   background?: string
 }
 
+function AvatarFallback() {
+  return (
+    <group position={[0, -1.2, 0]}>
+      <Box args={[0.5, 1.6, 0.3]} position={[0, 0.8, 0]}>
+        <meshStandardMaterial color="#C9A35B" />
+      </Box>
+      <Box args={[0.6, 0.4, 0.3]} position={[0, 0, 0]}>
+        <meshStandardMaterial color="#C9A35B" />
+      </Box>
+      <Box args={[0.4, 0.8, 0.3]} position={[0, -0.8, 0]}>
+        <meshStandardMaterial color="#C9A35B" />
+      </Box>
+    </group>
+  )
+}
+
 function Avatar({ url, playing }: { url: string; playing: boolean }) {
-  const { scene } = useGLTF(url)
   const group = useRef<any>()
-  useFrame((state) => {
-    if (!group.current) return
-    const t = state.clock.getElapsedTime()
-    if (playing) {
-      // Gentle sway and forward/back micro-walk
-      group.current.position.z = Math.sin(t * 0.5) * 0.5
-      group.current.rotation.y = Math.sin(t * 0.8) * 0.1
-    }
-  })
-  return <group ref={group} position={[0, -1.2, 0]}>
-    <primitive object={scene} />
-  </group>
+  
+  try {
+    const { scene } = useGLTF(url)
+    
+    useFrame((state) => {
+      if (!group.current) return
+      const t = state.clock.getElapsedTime()
+      if (playing) {
+        // Gentle sway and forward/back micro-walk
+        group.current.position.z = Math.sin(t * 0.5) * 0.5
+        group.current.rotation.y = Math.sin(t * 0.8) * 0.1
+      }
+    })
+    
+    return <group ref={group} position={[0, -1.2, 0]}>
+      <primitive object={scene} />
+    </group>
+  } catch (err) {
+    console.error('Avatar error:', err)
+    return <group ref={group} position={[0, -1.2, 0]}>
+      <AvatarFallback />
+    </group>
+  }
 }
 
 export const Runway: React.FC<RunwayProps> = ({ modelUrl, background }) => {
   const bg = background ?? '#0f0f10'
   const [playing, setPlaying] = useState(false)
+  const safeUrl = modelUrl || 'https://assets.pmnd.rs/models/Flamingo.glb'
+  
   return (
     <div className="relative rounded-xl overflow-hidden" style={{ height: 420 }}>
       <Canvas camera={{ position: [2.5, 1.6, 3.2], fov: 45 }}>
         <color attach="background" args={[bg]} />
-        <Suspense fallback={null}>
-          <Stage intensity={0.9} environment={null} shadows="contact">
-            <Avatar url={modelUrl} playing={playing} />
-          </Stage>
+        <Suspense fallback={<AvatarFallback />}>
+          <ErrorBoundary fallback={<AvatarFallback />}>
+            <Stage intensity={0.9} environment={null} shadows="contact">
+              <Avatar url={safeUrl} playing={playing} />
+            </Stage>
+          </ErrorBoundary>
           <Environment preset="studio" />
         </Suspense>
         <CameraPath playing={playing} />
@@ -85,5 +115,5 @@ function CameraPath({ playing }: { playing: boolean }) {
   return null
 }
 
-useGLTF.preload('https://assets.pmnd.rs/models/Flamingo.glb')
+// Preload removed - models will load on demand
 
