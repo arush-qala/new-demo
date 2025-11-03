@@ -17,3 +17,11 @@ html, body, #root {
   backdrop-filter: blur(10px);
 }
 
+/* Enhanced backdrop blur for liquid glass effect */
+@supports (backdrop-filter: blur(20px)) {
+  .backdrop-blur-2xl {
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+  }
+}
+

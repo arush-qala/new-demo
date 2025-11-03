@@ -69,7 +69,7 @@ export const FittingRoom: React.FC<FittingRoomProps> = ({ productImage }) => {
           <color attach="background" args={["#0f0f10"]} />
           <Suspense fallback={<AvatarFallback />}>
             <ErrorBoundary fallback={<AvatarFallback />}>
-              <Stage intensity={1.1} environment="city" shadows="contact">
+              <Stage intensity={1.3} environment="city" shadows="contact" adjustCamera={false}>
                 <ModelAvatar
                   bodyType={bodyType}
                   measurements={measurements}

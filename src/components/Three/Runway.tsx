@@ -193,7 +193,7 @@ export const Runway: React.FC<RunwayProps> = ({ modelUrl, background, productIma
         
         <Suspense fallback={<AvatarFallback />}>
           <ErrorBoundary fallback={<AvatarFallback />}>
-            <Stage intensity={1.4} environment="city" shadows="contact">
+            <Stage intensity={1.6} environment="city" shadows="contact" adjustCamera={false}>
               <AnimatedRunwayAvatar 
                 playing={playing} 
                 productImage={productImage}
