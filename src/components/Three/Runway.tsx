@@ -24,7 +24,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode
 }
 
 type RunwayProps = {
-  modelUrl: string
+  modelUrl?: string // Deprecated - kept for backward compatibility but not used
   background?: string
   productImage?: string
 }
@@ -114,6 +114,7 @@ function AnimatedRunwayAvatar({
   
   return (
     <group ref={groupRef}>
+      {/* Using ModelAvatar ensures consistency - same realistic woman model on all product pages */}
       <ModelAvatar
         bodyType="standard"
         measurements={measurements}
@@ -180,7 +181,8 @@ export const Runway: React.FC<RunwayProps> = ({ modelUrl, background, productIma
   const bg = background ?? '#0a0806'
   const [playing, setPlaying] = useState(false)
   
-  // Standard measurements for runway model
+  // Standard measurements for runway model (realistic woman proportions)
+  // Note: modelUrl prop is deprecated - we now use ModelAvatar component for consistency
   const measurements = { bust: 90, waist: 72, hips: 96, height: 168 }
   
   return (

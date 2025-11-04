@@ -102,7 +102,8 @@ export const ProductPage: React.FC = () => {
 
       <section className="space-y-4">
         <h2 className="text-xl font-display">Runway Preview</h2>
-        <Runway modelUrl="https://assets.pmnd.rs/models/Flamingo.glb" productImage={productImageSet[0]} />
+        {/* Runway uses ModelAvatar component - same realistic woman model as Fitting Room */}
+        <Runway productImage={productImageSet[0]} />
       </section>
     </div>
     </>

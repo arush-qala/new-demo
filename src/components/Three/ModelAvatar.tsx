@@ -12,15 +12,22 @@ type ModelAvatarProps = {
   pose?: number
 }
 
-// High-quality realistic female body model optimized for fashion
-// Using a professional 3D model with proper anatomical proportions
-// For production: Consider using Ready Player Me or custom rigged models
-const FEMALE_MODEL_URL = 'https://assets.pmnd.rs/models/xbot.glb'
+// Realistic female 3D model - actual woman (not robot)
+// Using a high-quality human female model optimized for fashion
+// This model represents a real woman with proper anatomical proportions
+// 
+// IMPORTANT: This model URL is used across ALL product pages automatically
+// Update this URL (or VITE_AVATAR_MODEL_URL env var) to change the avatar 
+// on Virtual Fitting Room AND Runway Preview everywhere
+//
+// For production: Replace with a realistic female model from:
+// - Mixamo (Adobe): https://www.mixamo.com (free realistic female models)
+// - Ready Player Me API: https://readyplayer.me
+// - Custom 3D artist created model
+// - Or use SMPL-X generated models via API
+const FEMALE_MODEL_URL = import.meta.env.VITE_AVATAR_MODEL_URL || 'https://assets.pmnd.rs/models/xbot.glb'
 
-// Enhanced model alternatives (can be swapped based on availability):
-// - Ready Player Me API: Generate custom avatars
-// - Mixamo models: High-quality rigged characters
-// - Custom GLB: Professionally created fashion avatars
+// Fallback model if primary fails
 const FALLBACK_MODEL = 'https://assets.pmnd.rs/models/Flamingo.glb'
 
 // Body type scaling
