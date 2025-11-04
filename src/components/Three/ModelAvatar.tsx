@@ -37,7 +37,7 @@ type ModelAvatarProps = {
 
 // TODO: Replace with realistic female model from Mixamo or custom source
 // Current model is NOT a realistic woman - needs to be replaced
-const FEMALE_MODEL_URL = import.meta.env.VITE_AVATAR_MODEL_URL || 
+const FEMALE_MODEL_URL = (import.meta.env?.VITE_AVATAR_MODEL_URL as string | undefined) || 
   'https://assets.pmnd.rs/models/xbot.glb' // ⚠️ This is a placeholder - replace with realistic woman model
 
 // Fallback model if primary fails
@@ -140,8 +140,10 @@ function ModelLoader({
     if (!groupRef.current) return
     
     // Subtle body rotation and movement for pose
-    groupRef.current.rotation.y = Math.sin(pose) * 0.12
-    groupRef.current.position.z = Math.sin(pose * 0.5) * 0.12
+    // pose is guaranteed to be a number (defaults to 0 in component)
+    const poseValue = pose ?? 0
+    groupRef.current.rotation.y = Math.sin(poseValue) * 0.12
+    groupRef.current.position.z = Math.sin(poseValue * 0.5) * 0.12
   })
   
   // Clone and scale the model
