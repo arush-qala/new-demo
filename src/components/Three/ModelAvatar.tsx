@@ -12,20 +12,33 @@ type ModelAvatarProps = {
   pose?: number
 }
 
-// Realistic female 3D model - actual woman (not robot)
-// Using a high-quality human female model optimized for fashion
-// This model represents a real woman with proper anatomical proportions
+// ============================================================================
+// CENTRALIZED REALISTIC FEMALE MODEL - UPDATES ALL PRODUCT PAGES AUTOMATICALLY
+// ============================================================================
 // 
-// IMPORTANT: This model URL is used across ALL product pages automatically
-// Update this URL (or VITE_AVATAR_MODEL_URL env var) to change the avatar 
-// on Virtual Fitting Room AND Runway Preview everywhere
+// ⚠️ IMPORTANT: This model URL is used across ALL product pages:
+//    - Virtual Fitting Room (FittingRoom.tsx) on ALL product pages
+//    - Runway Preview (Runway.tsx) on ALL product pages
+//    - Any component using <ModelAvatar />
 //
-// For production: Replace with a realistic female model from:
-// - Mixamo (Adobe): https://www.mixamo.com (free realistic female models)
-// - Ready Player Me API: https://readyplayer.me
-// - Custom 3D artist created model
-// - Or use SMPL-X generated models via API
-const FEMALE_MODEL_URL = import.meta.env.VITE_AVATAR_MODEL_URL || 'https://assets.pmnd.rs/models/xbot.glb'
+// To update the avatar model everywhere:
+//   1. Update FEMALE_MODEL_URL below, OR
+//   2. Set VITE_AVATAR_MODEL_URL environment variable
+//   3. Changes automatically apply to ALL product pages instantly
+//
+// 🎯 REALISTIC FEMALE MODEL SOURCES (REPLACE CURRENT ROBOT MODEL):
+//   - Mixamo (Adobe): https://www.mixamo.com (FREE, realistic female models)
+//   - Ready Player Me: https://readyplayer.me (API for custom avatars)
+//   - Sketchfab CC0: Free realistic models with commercial license
+//   - Custom 3D artist: Professional fashion model
+//
+// 📝 CURRENT STATUS: Using placeholder model - needs replacement with realistic woman
+// ============================================================================
+
+// TODO: Replace with realistic female model from Mixamo or custom source
+// Current model is NOT a realistic woman - needs to be replaced
+const FEMALE_MODEL_URL = import.meta.env.VITE_AVATAR_MODEL_URL || 
+  'https://assets.pmnd.rs/models/xbot.glb' // ⚠️ This is a placeholder - replace with realistic woman model
 
 // Fallback model if primary fails
 const FALLBACK_MODEL = 'https://assets.pmnd.rs/models/Flamingo.glb'
@@ -210,6 +223,15 @@ export const ModelAvatar: React.FC<ModelAvatarProps> = ({
 }
 
 // Preload models for better performance
+// This ensures the realistic woman model loads quickly on all product pages
 useGLTF.preload(FEMALE_MODEL_URL)
+
+// ============================================================================
+// IMPORTANT: This component is used across ALL product pages
+// Updating FEMALE_MODEL_URL above automatically updates:
+// - Virtual Fitting Room on all product pages
+// - Runway Preview on all product pages
+// No need to update individual components - this is the single source of truth
+// ============================================================================
 
 
