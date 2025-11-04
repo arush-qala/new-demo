@@ -35,10 +35,12 @@ type ModelAvatarProps = {
 // 📝 CURRENT STATUS: Using placeholder model - needs replacement with realistic woman
 // ============================================================================
 
-// TODO: Replace with realistic female model from Mixamo or custom source
-// Current model is NOT a realistic woman - needs to be replaced
+// Realistic female model URL
+// IMPORTANT: Replace with your realistic woman model from Mixamo or custom source
+// Current: Using xbot as placeholder - materials are applied to make it look more human-like
+// TODO: Upload a realistic female model from Mixamo to your CDN and update this URL
 const FEMALE_MODEL_URL = (import.meta.env?.VITE_AVATAR_MODEL_URL as string | undefined) || 
-  'https://assets.pmnd.rs/models/xbot.glb' // ⚠️ This is a placeholder - replace with realistic woman model
+  'https://assets.pmnd.rs/models/xbot.glb' // ⚠️ PLACEHOLDER - Replace with realistic woman model
 
 // Fallback model if primary fails
 const FALLBACK_MODEL = 'https://assets.pmnd.rs/models/Flamingo.glb'
@@ -157,30 +159,45 @@ function ModelLoader({
       bodyScale.z * heightScale
     )
     
-    // Apply enhanced materials to model parts
+    // Apply enhanced materials to model parts - REALISTIC WOMAN APPEARANCE
     if (clone.children) {
       clone.traverse((child: any) => {
         if (child.isMesh && child.material) {
           const name = child.name?.toLowerCase() || ''
           
-          // Apply dress material to clothing/body areas if texture is available
-          if (texture && (name.includes('body') || name.includes('torso') || 
-              name.includes('dress') || name.includes('shirt') ||
-              name.includes('top') || name.includes('chest'))) {
+          // Strategy: Make model look like a realistic woman
+          // 1. If product texture exists, apply it to body/torso/clothing areas
+          // 2. Otherwise, apply realistic skin material to everything for woman appearance
+          
+          // Check if this is a body/clothing area that should have the product texture
+          const isBodyArea = name.includes('body') || name.includes('torso') || 
+                            name.includes('dress') || name.includes('shirt') ||
+                            name.includes('top') || name.includes('chest') ||
+                            name.includes('abdomen') || name.includes('pelvis') ||
+                            name.includes('hip') || name.includes('waist')
+          
+          // Check if this is an exposed body part (skin visible)
+          const isSkinArea = name.includes('head') || name.includes('face') || 
+                            name.includes('hand') || name.includes('arm') || 
+                            name.includes('leg') || name.includes('foot') ||
+                            name.includes('neck') || name.includes('shoulder')
+          
+          // Apply product texture to body/clothing if available
+          if (texture && isBodyArea) {
             child.material = dressMaterial
-            child.castShadow = true
-            child.receiveShadow = true
           }
-          // Apply skin material to exposed body parts
-          else if (name.includes('head') || name.includes('face') || 
-                   name.includes('hand') || name.includes('arm') || 
-                   name.includes('leg') || name.includes('foot')) {
+          // Apply realistic skin material to exposed parts or as base
+          else if (isSkinArea || !texture) {
+            // Use skin material for exposed parts or if no product texture
+            // This makes the model look like a realistic woman
             child.material = skinMaterial
-            child.castShadow = true
-            child.receiveShadow = true
           }
           
-          // Enhance geometry smoothness
+          // Ensure all meshes have proper shadow settings
+          child.castShadow = true
+          child.receiveShadow = true
+          
+          // Enhance geometry smoothness for realistic appearance
           if (child.geometry) {
             child.geometry.computeVertexNormals()
           }
