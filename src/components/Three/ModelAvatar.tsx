@@ -35,12 +35,27 @@ type ModelAvatarProps = {
 // 📝 CURRENT STATUS: Using placeholder model - needs replacement with realistic woman
 // ============================================================================
 
-// Realistic female model URL
-// IMPORTANT: Replace with your realistic woman model from Mixamo or custom source
-// Current: Using xbot as placeholder - materials are applied to make it look more human-like
-// TODO: Upload a realistic female model from Mixamo to your CDN and update this URL
+// ============================================================================
+// MIXAMO MODEL CONFIGURATION
+// ============================================================================
+// 
+// STEP 1: Download realistic female model from Mixamo in GLB format
+// STEP 2: Place it in /public/models/ folder (e.g., /public/models/realistic-woman.glb)
+// STEP 3: Update MIXAMO_MODEL_FILENAME below with your filename
+// STEP 4: Deploy - works on all product pages automatically!
+//
+// Example: If you downloaded "realistic-woman.glb" and placed it in /public/models/
+//          Then set: const MIXAMO_MODEL_FILENAME = 'realistic-woman.glb'
+//
+// ============================================================================
+
+// Mixamo model filename - UPDATE THIS if you change the model file
+const MIXAMO_MODEL_FILENAME = 'Girl.glb' // ✅ Using realistic woman model from Mixamo
+
+// Model will be loaded from /public/models/ folder
+// Priority: Environment variable > Local Mixamo model > Fallback
 const FEMALE_MODEL_URL = (import.meta.env?.VITE_AVATAR_MODEL_URL as string | undefined) || 
-  'https://assets.pmnd.rs/models/xbot.glb' // ⚠️ PLACEHOLDER - Replace with realistic woman model
+  (MIXAMO_MODEL_FILENAME ? `/models/${MIXAMO_MODEL_FILENAME}` : 'https://assets.pmnd.rs/models/xbot.glb')
 
 // Fallback model if primary fails
 const FALLBACK_MODEL = 'https://assets.pmnd.rs/models/Flamingo.glb'
